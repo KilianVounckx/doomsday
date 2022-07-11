@@ -5,6 +5,7 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const exe = b.addExecutable("doomsday", "src/main.zig");
+    exe.addPackagePath("datetime", "libs/zig-datetime/src/main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
     exe.install();
