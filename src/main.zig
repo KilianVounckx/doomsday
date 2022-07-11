@@ -1,16 +1,25 @@
 pub fn main() !void {
-    var rng = rand.DefaultPrng.init(Time.now().nanosecond);
-    const random = rng.random();
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer std.debug.assert(!gpa.deinit());
     const allocator = gpa.allocator();
 
+    const level = levelFromArgs(allocator) catch |err| switch (err) {
+        error.InvalidLevel => return,
+        else => |e| return e,
+    };
+
+    var rng = rand.DefaultPrng.init(Time.now().nanosecond);
+    const random = rng.random();
+
+    try doomsday(allocator, random, level);
+}
+
+pub fn levelFromArgs(allocator: Allocator) !Level {
     var args = try process.argsWithAllocator(allocator);
     defer args.deinit();
     std.debug.assert(args.skip());
 
-    const level = if (args.next()) |arg|
+    return if (args.next()) |arg|
         if (mem.eql(u8, arg, "easy"))
             Level.easy
         else if (mem.eql(u8, arg, "medium"))
@@ -19,12 +28,10 @@ pub fn main() !void {
             Level.hard
         else {
             try stdout.print(usage, .{});
-            return;
+            return error.InvalidLevel;
         }
     else
         .medium;
-
-    try doomsday(allocator, random, level);
 }
 
 const usage = "Usage: doomsday [easy | medium | hard (default: medium)]\n";
